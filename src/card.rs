@@ -1,20 +1,26 @@
-use hashish::HashMap;
+use hashish::HashSet;
 use core::fmt::Display;
-use std::fmt::Formatter;
+use core::fmt::Formatter;
 use rand::{Rng, distr::StandardUniform, prelude::Distribution};
 
 #[derive(Debug, Clone)]
 pub struct Deck {
-    pub cards: HashMap<bool, Card>,
+    pub cards: HashSet<Card>,
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Deck {
+    pub fn new(cards: HashSet<Card>) -> Self {
+        Deck { cards }
+    }
+}
+
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub struct Card {
     pub suit: Suit,
     pub value: Value,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum Value {
     Ace,
     Two,
@@ -31,7 +37,7 @@ pub enum Value {
     King,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum Suit {
     Clubs,
     Diamonds,

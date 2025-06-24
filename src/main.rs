@@ -1,20 +1,33 @@
-#[allow(dead_code, unused_imports)]
+#![allow(dead_code, unused_imports)]
+
 mod card;
+mod blackjack;
 
 use crossterm::event::{self, KeyCode};
+use hashish::HashSet;
 use rand::{rng, Rng};
 use ratatui::DefaultTerminal;
 use ratatui::prelude::*;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
-use crate::card::{Card, Suit};
+use crate::blackjack::Worth;
+use crate::card::{Card, Deck, Suit};
 
 fn main() -> std::io::Result<()> {
     let terminal = ratatui::init();
 
     let app = App {
         state: AppState::default(),
-        card: rng().random(),
+        player: {
+            let count = 2;
+            let mut cards = HashSet::with_capacity(count);
+
+            for _ in 0..count {
+                cards.insert(rng().random::<Card>());
+            }
+
+            Deck::new(cards)
+        }
     };
 
     app.run(terminal)?;
@@ -65,7 +78,7 @@ fn align_rect(parent: Rect, size: (u16, u16), alignment: Alignment) -> Rect {
 
 struct App {
     state: AppState,
-    card: Card,
+    player: Deck,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -94,13 +107,19 @@ impl App {
             .border_type(BorderType::Rounded)
             .style(Style::default().fg(Color::Red));
 
-        let card_rect = align_rect(frame.area(), (15, 9), Alignment::Percent(0.2, 0.5));
-        let card_block = Block::bordered()
-            .border_type(BorderType::Rounded);
-
         frame.render_widget(mount, frame.area());
-        frame.render_widget(card_block, card_rect);
-        render_card(frame, card_rect, self.card);
+
+        let worth = Line::raw(format!("Sum: {:?}", self.player.worth()));
+
+        let worth_rect = align_rect(frame.area(), (7, 1), Alignment::Percent(0.125, 0.15));
+        frame.render_widget(worth, worth_rect);
+
+        for (index, card) in self.player.cards.iter().enumerate() {
+            let x = 0.075 * ((index + 1) as f32);
+            let card_rect = align_rect(frame.area(), (15, 9), Alignment::Percent(x, 0.5));
+
+            render_card(frame, card_rect, *card);
+        }
     }
 
     fn handle_events(&mut self) -> std::io::Result<()> {
@@ -108,7 +127,14 @@ impl App {
             match key.code {
                 KeyCode::Esc => self.state = AppState::Cancelled,
                 KeyCode::Enter => {
-                    self.card = rng().random();
+                    let count = 2;
+                    let mut cards = HashSet::with_capacity(count);
+
+                    for _ in 0..count {
+                        cards.insert(rng().random::<Card>());
+                    }
+
+                    self.player = Deck::new(cards);
                 }
                 _ => {}
             }
@@ -163,6 +189,7 @@ fn render_card(f: &mut Frame, rect: Rect, card: Card) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Color::White)),
         )
         .style(Style::default().fg(Color::White));
 
