@@ -120,12 +120,24 @@ impl App {
 
             render_card(frame, card_rect, *card);
         }
+
+        self.help(frame);
+    }
+
+    fn help(&mut self, frame: &mut Frame) {
+        let block = Block::bordered();
+        let block_rect = align_rect(frame.area(), (45, 3), Alignment::Percent(0.015, 0.95));
+        let message = Line::raw("Press <q> to quit and <Enter> to shuffle.");
+        let message_rect = align_rect(frame.area(), (41, 1), Alignment::Percent(0.0225, 0.90));
+
+        frame.render_widget(block, block_rect);
+        frame.render_widget(message, message_rect);
     }
 
     fn handle_events(&mut self) -> std::io::Result<()> {
         if let Some(key) = event::read()?.as_key_press_event() {
             match key.code {
-                KeyCode::Esc => self.state = AppState::Cancelled,
+                KeyCode::Char('q') => self.state = AppState::Cancelled,
                 KeyCode::Enter => {
                     let count = 2;
                     let mut cards = HashSet::with_capacity(count);
