@@ -4,6 +4,13 @@ use {
     }
 };
 
+pub enum Action {
+    Hit,
+    Double,
+    Split,
+    Stand,
+}
+
 pub trait Worth {
     fn worth(&self) -> usize;
 }
