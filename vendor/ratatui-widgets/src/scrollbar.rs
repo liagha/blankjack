@@ -106,6 +106,7 @@ pub struct Scrollbar<'a> {
 ///          HorizontalBottom
 /// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScrollbarOrientation {
     /// Positions the scrollbar on the right, scrolling vertically
     #[default]
@@ -162,6 +163,7 @@ pub struct ScrollbarState {
 ///
 /// It is useful for example when you want to store in which direction to scroll.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
     #[default]
@@ -193,7 +195,7 @@ impl<'a> Scrollbar<'a> {
 
     /// Creates a new scrollbar with the given orientation and symbol set.
     #[must_use = "creates the Scrollbar"]
-    const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set) -> Self {
+    const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set<'a>) -> Self {
         Self {
             orientation,
             thumb_symbol: symbols.thumb,
@@ -236,7 +238,7 @@ impl<'a> Scrollbar<'a> {
     pub const fn orientation_and_symbol(
         mut self,
         orientation: ScrollbarOrientation,
-        symbols: Set,
+        symbols: Set<'a>,
     ) -> Self {
         self.orientation = orientation;
         self.symbols(symbols)
@@ -370,7 +372,7 @@ impl<'a> Scrollbar<'a> {
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[expect(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn symbols(mut self, symbols: Set) -> Self {
+    pub const fn symbols(mut self, symbols: Set<'a>) -> Self {
         self.thumb_symbol = symbols.thumb;
         if self.track_symbol.is_some() {
             self.track_symbol = Some(symbols.track);
@@ -968,6 +970,8 @@ mod tests {
     #[case::position_8("<---#####>", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
+    #[case::position_few_out_of_bounds("<----####>", 15, 10)]
+    #[case::position_very_many_out_of_bounds("<----####>", 500, 10)]
     fn render_scrollbar_vertical_left(
         #[case] expected: &str,
         #[case] position: usize,
@@ -998,7 +1002,9 @@ mod tests {
     #[case::position_8("<---#####>", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
-    fn render_scrollbar_vertical_rightl(
+    #[case::position_few_out_of_bounds("<----####>", 15, 10)]
+    #[case::position_very_many_out_of_bounds("<----####>", 500, 10)]
+    fn render_scrollbar_vertical_right(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
@@ -1086,5 +1092,32 @@ mod tests {
 
         let mut state = ScrollbarState::new(10);
         scrollbar.render(zero_width_area, &mut buffer, &mut state);
+    }
+
+    #[rstest]
+    #[case::vertical_left(ScrollbarOrientation::VerticalLeft)]
+    #[case::vertical_right(ScrollbarOrientation::VerticalRight)]
+    #[case::horizontal_top(ScrollbarOrientation::HorizontalTop)]
+    #[case::horizontal_bottom(ScrollbarOrientation::HorizontalBottom)]
+    fn render_in_minimal_buffer(#[case] orientation: ScrollbarOrientation) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let scrollbar = Scrollbar::new(orientation);
+        let mut state = ScrollbarState::new(10).position(5);
+        // This should not panic, even if the buffer is too small to render the scrollbar.
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[rstest]
+    #[case::vertical_left(ScrollbarOrientation::VerticalLeft)]
+    #[case::vertical_right(ScrollbarOrientation::VerticalRight)]
+    #[case::horizontal_top(ScrollbarOrientation::HorizontalTop)]
+    #[case::horizontal_bottom(ScrollbarOrientation::HorizontalBottom)]
+    fn render_in_zero_size_buffer(#[case] orientation: ScrollbarOrientation) {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let scrollbar = Scrollbar::new(orientation);
+        let mut state = ScrollbarState::new(10).position(5);
+        // This should not panic, even if the buffer has zero size.
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
     }
 }

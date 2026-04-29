@@ -1,15 +1,14 @@
 #![no_std]
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
 )]
 #![warn(missing_docs)]
 //! **ratatui-widgets** contains all the widgets that were previously part of the [Ratatui] crate.
-//! It is meant to be used in conjunction with `ratatui`, which provides the core functionality
-//! for building terminal user interfaces.
+//! It is meant to be used in conjunction with `ratatui`, which provides the core functionality for
+//! building terminal user interfaces.
 //!
 //! [Ratatui]: https://crates.io/crates/ratatui
 //!
@@ -19,8 +18,8 @@
 //! depend on this crate rather than transitively through the `ratatui` crate.
 //!
 //! Previously, a crate named `ratatui-widgets` was published with some formative ideas about an
-//! eventual Ratatui framework. That crate is now move to [tui-framework-experiment], pending a new
-//! name.
+//! eventual Ratatui framework. That crate has now moved to [tui-framework-experiment], pending a
+//! new name.
 //!
 //! [tui-framework-experiment]: https://crates.io/crates/tui-framework-experiment
 //!
@@ -69,6 +68,28 @@
 //! [`Tabs`]: crate::tabs::Tabs
 //!
 //! All these widgets are re-exported directly under `ratatui::widgets` in the `ratatui` crate.
+//!
+//! # Crate Organization
+//!
+//! `ratatui-widgets` is part of the Ratatui workspace that was modularized in version 0.30.0.
+//! This crate contains all the built-in widget implementations that were previously part of the
+//! main `ratatui` crate.
+//!
+//! **When to use `ratatui-widgets`:**
+//!
+//! - Building widget libraries that need to compose with built-in widgets
+//! - You want finer-grained dependencies and only need specific widgets
+//! - Creating custom widgets that extend or wrap the built-in ones
+//!
+//! **When to use the main [`ratatui`] crate:**
+//!
+//! - Building applications (recommended - includes everything you need)
+//! - You want the convenience of having all widgets available
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 //!

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use core::fmt::Display;
 use core::fmt::Formatter;
-use rand::{Rng, distr::StandardUniform, prelude::Distribution, seq::SliceRandom};
+use rand::{Rng, distr::StandardUniform, prelude::Distribution, seq::SliceRandom, RngExt};
 
 pub trait Worth {
     fn worth(&self) -> usize;

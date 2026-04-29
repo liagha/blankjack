@@ -12,12 +12,10 @@
 use super::{Error, SampleBorrow, SampleUniform, UniformSampler};
 use crate::distr::float::IntoFloat;
 use crate::distr::utils::{BoolAsSIMD, FloatAsSIMD, FloatSIMDUtils, IntAsSIMD};
-use crate::Rng;
+use crate::{Rng, RngExt};
 
 #[cfg(feature = "simd_support")]
 use core::simd::prelude::*;
-// #[cfg(feature = "simd_support")]
-// use core::simd::{LaneCount, SupportedLaneCount};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -218,15 +216,15 @@ uniform_float_impl! { feature = "simd_support", f64x8, u64x8, f64, u64, 64 - 52 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::distr::{utils::FloatSIMDScalarUtils, Uniform};
-    use crate::rngs::mock::StepRng;
+    use crate::distr::{Uniform, utils::FloatSIMDScalarUtils};
+    use crate::test::{const_rng, step_rng};
 
     #[test]
     #[cfg_attr(miri, ignore)] // Miri is too slow
     fn test_floats() {
         let mut rng = crate::test::rng(252);
-        let mut zero_rng = StepRng::new(0, 0);
-        let mut max_rng = StepRng::new(0xffff_ffff_ffff_ffff, 0);
+        let mut zero_rng = const_rng(0);
+        let mut max_rng = const_rng(0xffff_ffff_ffff_ffff);
         macro_rules! t {
             ($ty:ty, $f_scalar:ident, $bits_shifted:expr) => {{
                 let v: &[($f_scalar, $f_scalar)] = &[
@@ -318,10 +316,8 @@ mod tests {
                         // since for those rounding might result in selecting high for a very
                         // long time.
                         if (high_scalar - low_scalar) > 0.0001 {
-                            let mut lowering_max_rng = StepRng::new(
-                                0xffff_ffff_ffff_ffff,
-                                (-1i64 << $bits_shifted) as u64,
-                            );
+                            let mut lowering_max_rng =
+                                step_rng(0xffff_ffff_ffff_ffff, (-1i64 << $bits_shifted) as u64);
                             assert!(
                                 <$ty as SampleUniform>::Sampler::sample_single(
                                     low,

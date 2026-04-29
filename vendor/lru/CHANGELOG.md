@@ -1,5 +1,29 @@
 # Changelog
 
+## [v0.16.4](https://github.com/jeromefroe/lru-rs/tree/0.16.4) - 2026-04-13
+
+- Add `get_or_insert_with_key` and variants.
+
+## [v0.16.3](https://github.com/jeromefroe/lru-rs/tree/0.16.3) - 2026-01-07
+
+- Fix Stacked Borrows violation in `IterMut`.
+
+## [v0.16.2](https://github.com/jeromefroe/lru-rs/tree/0.16.2) - 2025-10-14
+
+- Upgrade hashbrown dependency to 0.16.0.
+
+## [v0.16.1](https://github.com/jeromefroe/lru-rs/tree/0.16.1) - 2025-09-08
+
+- Fix `Clone` for unbounded cache.
+
+## [v0.16.0](https://github.com/jeromefroe/lru-rs/tree/0.16.0) - 2025-07-02
+
+- Implement `Clone` for caches with custom hashers.
+
+## [v0.15.0](https://github.com/jeromefroe/lru-rs/tree/0.15.0) - 2025-06-26
+
+- Return bool from `promote` and `demote` to indicate whether key was found.
+
 ## [v0.14.0](https://github.com/jeromefroe/lru-rs/tree/0.14.0) - 2025-04-12
 
 - Use `NonZeroUsize::MAX` instead of `unwrap()`, and update MSRV to 1.70.0.

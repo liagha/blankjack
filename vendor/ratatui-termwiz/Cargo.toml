@@ -11,9 +11,9 @@
 
 [package]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.86.0"
 name = "ratatui-termwiz"
-version = "0.1.0-alpha.4"
+version = "0.1.0"
 authors = [
     "Florian Dehau <work@fdehau.com>",
     "The Ratatui Developers",
@@ -34,7 +34,7 @@ autotests = false
 autobenches = false
 description = "Termwiz backend for the Ratatui Terminal UI library."
 homepage = "https://ratatui.rs"
-documentation = "https://docs.rs/ratatui-termwiz/"
+documentation = "https://docs.rs/ratatui-termwiz"
 readme = "README.md"
 keywords = [
     "tui",
@@ -61,7 +61,7 @@ rustdoc-args = [
 default = []
 scrolling-regions = ["ratatui-core/scrolling-regions"]
 serde = ["termwiz/use_serde"]
-underline-color = []
+underline-color = ["ratatui-core/underline-color"]
 
 [lib]
 name = "ratatui_termwiz"
@@ -72,13 +72,13 @@ version = "0.2"
 optional = true
 
 [dependencies.ratatui-core]
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 
 [dependencies.termwiz]
 version = "0.23"
 
 [dev-dependencies.rstest]
-version = "0.25"
+version = "0.26"
 
 [lints.clippy]
 as_underscore = "warn"
@@ -92,6 +92,7 @@ empty_line_after_doc_comments = "warn"
 equatable_if_let = "warn"
 fn_to_numeric_cast_any = "warn"
 format_push_string = "warn"
+implicit_clone = "warn"
 map_err_ignore = "warn"
 missing_const_for_fn = "warn"
 missing_errors_doc = "allow"
@@ -108,7 +109,6 @@ redundant_type_annotations = "warn"
 rest_pat_in_fully_bound_structs = "warn"
 string_lit_chars_any = "warn"
 string_slice = "warn"
-string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
 

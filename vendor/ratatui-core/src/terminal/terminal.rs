@@ -26,7 +26,31 @@ use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 /// application with the new size. This will automatically resize the internal buffers to match the
 /// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
 ///
+/// # Initialization
+///
+/// For most applications, consider using the convenience functions `ratatui::run()`,
+/// `ratatui::init()`, and `ratatui::restore()` (available since version 0.28.1) along with the
+/// `DefaultTerminal` type alias instead of constructing `Terminal` instances manually. These
+/// functions handle the common setup and teardown tasks automatically. Manual construction
+/// using `Terminal::new()` or `Terminal::with_options()` is still supported for applications
+/// that need fine-grained control over initialization.
+///
 /// # Examples
+///
+/// ## Using convenience functions (recommended for most applications)
+///
+/// ```rust,ignore
+/// // Modern approach using convenience functions
+/// ratatui::run(|terminal| {
+///     terminal.draw(|frame| {
+///         let area = frame.area();
+///         frame.render_widget(Paragraph::new("Hello World!"), area);
+///     })?;
+///     Ok(())
+/// })?;
+/// ```
+///
+/// ## Manual construction (for fine-grained control)
 ///
 /// ```rust,ignore
 /// use std::io::stdout;
@@ -104,6 +128,14 @@ where
 {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
+    /// Note that unlike `ratatui::init`, this does not install a panic hook, so it is recommended
+    /// to do that manually when using this function, otherwise any panic messages will be printed
+    /// to the alternate screen and the terminal may be left in an unusable state.
+    ///
+    /// See [how to set up panic hooks](https://ratatui.rs/recipes/apps/panic-hooks/) and
+    /// [`better-panic` example](https://ratatui.rs/recipes/apps/better-panic/) for more
+    /// information.
+    ///
     /// # Example
     ///
     /// ```rust,ignore
@@ -113,6 +145,13 @@ where
     ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let terminal = Terminal::new(backend)?;
+    ///
+    /// // Optionally set up a panic hook to restore the terminal on panic.
+    /// let old_hook = std::panic::take_hook();
+    /// std::panic::set_hook(Box::new(move |info| {
+    ///     ratatui::restore();
+    ///     old_hook(info);
+    /// }));
     /// # std::io::Result::Ok(())
     /// ```
     pub fn new(backend: B) -> Result<Self, B::Error> {
@@ -140,9 +179,7 @@ where
     /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> Result<Self, B::Error> {
         let area = match options.viewport {
-            Viewport::Fullscreen | Viewport::Inline(_) => {
-                Rect::from((Position::ORIGIN, backend.size()?))
-            }
+            Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?.into(),
             Viewport::Fixed(area) => area,
         };
         let (viewport_area, cursor_pos) = match options.viewport {
@@ -166,7 +203,41 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
-    pub const fn get_frame(&mut self) -> Frame {
+    ///
+    /// # Note
+    ///
+    /// This exists to support more advanced use cases. Most cases should be fine using
+    /// [`Terminal::draw`].
+    ///
+    /// [`Terminal::get_frame`] should be used when you need direct access to the frame buffer
+    /// outside of draw closure, for example:
+    ///
+    /// - Unit testing widgets
+    /// - Buffer state inspection
+    /// - Cursor manipulation
+    /// - Multiple rendering passes/Buffer Manipulation
+    /// - Custom frame lifecycle management
+    /// - Buffer exporting
+    ///
+    /// # Example
+    ///
+    /// Getting the buffer and asserting on some cells after rendering a widget.
+    ///
+    /// ```rust,ignore
+    /// use ratatui::{backend::TestBackend, Terminal};
+    /// use ratatui::widgets::Paragraph;
+    /// let backend = TestBackend::new(30, 5);
+    /// let mut terminal = Terminal::new(backend).unwrap();
+    /// {
+    ///     let mut frame = terminal.get_frame();
+    ///     frame.render_widget(Paragraph::new("Hello"), frame.area());
+    /// }
+    /// // When not using `draw`, present the buffer manually:
+    /// terminal.flush().unwrap();
+    /// terminal.swap_buffers();
+    /// terminal.backend_mut().flush().unwrap();
+    /// ```
+    pub const fn get_frame(&mut self) -> Frame<'_> {
         let count = self.frame_count;
         Frame {
             cursor_position: None,
@@ -241,7 +312,7 @@ where
     pub fn autoresize(&mut self) -> Result<(), B::Error> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let area = Rect::from((Position::ORIGIN, self.size()?));
+            let area = self.size()?.into();
             if area != self.last_known_area {
                 self.resize(area)?;
             }
@@ -299,7 +370,7 @@ where
     /// }
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, render_callback: F) -> Result<CompletedFrame, B::Error>
+    pub fn draw<F>(&mut self, render_callback: F) -> Result<CompletedFrame<'_>, B::Error>
     where
         F: FnOnce(&mut Frame),
     {
@@ -374,7 +445,7 @@ where
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn try_draw<F, E>(&mut self, render_callback: F) -> Result<CompletedFrame, B::Error>
+    pub fn try_draw<F, E>(&mut self, render_callback: F) -> Result<CompletedFrame<'_>, B::Error>
     where
         F: FnOnce(&mut Frame) -> Result<(), E>,
         E: Into<B::Error>,

@@ -43,15 +43,15 @@ fn run(mut terminal: DefaultTerminal, size: RatatuiLogoSize) -> Result<()> {
     loop {
         terminal.draw(|frame| render(frame, size))?;
         if event::read()?.is_key_press() {
-            return Ok(());
+            break Ok(());
         }
     }
 }
 
 /// Render the UI with a logo.
 fn render(frame: &mut Frame, size: RatatuiLogoSize) {
-    let [top, bottom] =
-        Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(frame.area());
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+    let [top, bottom] = frame.area().layout(&layout);
 
     frame.render_widget("Powered by", top);
     frame.render_widget(RatatuiLogo::new(size), bottom);

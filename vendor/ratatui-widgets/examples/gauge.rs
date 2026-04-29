@@ -20,35 +20,29 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Gauge, LineGauge};
-use ratatui::{DefaultTerminal, Frame, symbols};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(render)?;
-        if event::read()?.is_key_press() {
-            return Ok(());
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::read()?.is_key_press() {
+                break Ok(());
+            }
         }
-    }
+    })
 }
 
 /// Render the UI with various progress bars.
 fn render(frame: &mut Frame) {
-    let vertical = Layout::vertical([
+    let constraints = [
         Constraint::Length(1),
         Constraint::Max(2),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second] = vertical.areas(frame.area());
+    ];
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Gauge Widget").bold(),

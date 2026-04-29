@@ -1,6 +1,5 @@
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -11,6 +10,28 @@
 //!
 //! [`Backend`]: trait.Backend.html
 //! [Termwiz]: https://crates.io/crates/termwiz
+//!
+//! # Crate Organization
+//!
+//! `ratatui-termwiz` is part of the Ratatui workspace that was modularized in version 0.30.0.
+//! This crate provides the [Termwiz] backend implementation for Ratatui.
+//!
+//! **When to use `ratatui-termwiz`:**
+//!
+//! - You need fine-grained control over dependencies
+//! - Building a widget library that needs backend functionality
+//! - You want to use only the Termwiz backend without other backends
+//! - You need Termwiz's advanced terminal capabilities
+//!
+//! **When to use the main [`ratatui`] crate:**
+//!
+//! - Building applications (recommended - includes termwiz backend when enabled)
+//! - You want the convenience of having everything available
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 

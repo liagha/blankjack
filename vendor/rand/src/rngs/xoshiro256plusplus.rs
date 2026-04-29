@@ -6,9 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use rand_core::impls::fill_bytes_via_next;
-use rand_core::le::read_u64_into;
-use rand_core::{RngCore, SeedableRng};
+use core::convert::Infallible;
+use rand_core::{SeedableRng, TryRng, utils};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -33,8 +32,7 @@ impl SeedableRng for Xoshiro256PlusPlus {
     /// mapped to a different seed.
     #[inline]
     fn from_seed(seed: [u8; 32]) -> Xoshiro256PlusPlus {
-        let mut state = [0; 4];
-        read_u64_into(&seed, &mut state);
+        let state = utils::read_words(&seed);
         // Check for zero on aligned integers for better code generation.
         // Furtermore, seed_from_u64(0) will expand to a constant when optimized.
         if state.iter().all(|&x| x == 0) {
@@ -65,17 +63,18 @@ impl SeedableRng for Xoshiro256PlusPlus {
     }
 }
 
-impl RngCore for Xoshiro256PlusPlus {
+impl TryRng for Xoshiro256PlusPlus {
+    type Error = Infallible;
+
     #[inline]
-    fn next_u32(&mut self) -> u32 {
+    fn try_next_u32(&mut self) -> Result<u32, Infallible> {
         // The lowest bits have some linear dependencies, so we use the
         // upper bits instead.
-        let val = self.next_u64();
-        (val >> 32) as u32
+        self.try_next_u64().map(|val| (val >> 32) as u32)
     }
 
     #[inline]
-    fn next_u64(&mut self) -> u64 {
+    fn try_next_u64(&mut self) -> Result<u64, Infallible> {
         let res = self.s[0]
             .wrapping_add(self.s[3])
             .rotate_left(23)
@@ -92,19 +91,19 @@ impl RngCore for Xoshiro256PlusPlus {
 
         self.s[3] = self.s[3].rotate_left(45);
 
-        res
+        Ok(res)
     }
 
     #[inline]
-    fn fill_bytes(&mut self, dst: &mut [u8]) {
-        fill_bytes_via_next(self, dst)
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Infallible> {
+        utils::fill_bytes_via_next_word(dst, || self.try_next_u64())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Xoshiro256PlusPlus;
-    use rand_core::{RngCore, SeedableRng};
+    use rand_core::{Rng, SeedableRng};
 
     #[test]
     fn reference() {
@@ -132,10 +131,12 @@ mod tests {
     }
 
     #[test]
-    fn stable_seed_from_u64() {
+    fn stable_seed_from_u64_and_from_seed() {
         // We don't guarantee value-stability for SmallRng but this
         // could influence keeping stability whenever possible (e.g. after optimizations).
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(0);
+        // from_seed([0; 32]) should produce the same state as seed_from_u64(0).
+        let mut rng_from_seed_0 = Xoshiro256PlusPlus::from_seed([0; 32]);
         let expected = [
             5987356902031041503,
             7051070477665621255,
@@ -150,6 +151,7 @@ mod tests {
         ];
         for &e in &expected {
             assert_eq!(rng.next_u64(), e);
+            assert_eq!(rng_from_seed_0.next_u64(), e);
         }
     }
 }
