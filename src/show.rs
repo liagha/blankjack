@@ -2,139 +2,115 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
-use crate::card::{Card, Deck};
-use crate::{suit_color};
+use crate::card::{Card, Hand, Suit};
 
-pub struct Formation {
-    size: (u16, u16),
-    alignment: Alignment,
-}
+const CARD_WIDTH: u16 = 15;
+const CARD_HEIGHT: u16 = 9;
+const CARD_GAP: u16 = 2;
 
-impl Default for Formation {
-    fn default() -> Formation {
-        Formation {
-            size: (0, 0),
-            alignment: Alignment::TopLeft,
-        }
-    }    
-}
+pub fn render_card_at(frame: &mut Frame, card: &Card, area: Rect) {
+    let style = Style::default().fg(suit_color(card.suit));
+    let width = area.width as usize;
+    let height = area.height as usize;
+    let mut lines = Vec::new();
 
-impl Formation {
-    pub fn new(size: (u16, u16), alignment: Alignment) -> Self {
-        Formation {
-            size,
-            alignment,
-        }
-    }
-    
-    pub fn rect(self, parent: Rect) -> Rect {
-        let (width, height) = (self.size.0, self.size.1);
-
-        let x = match self.alignment {
-            Alignment::Left => 0,
-            Alignment::Center => (parent.width.saturating_sub(width)) / 2,
-            Alignment::Right => parent.width.saturating_sub(width),
-            Alignment::TopLeft | Alignment::Top => 0,
-            Alignment::TopRight => parent.width.saturating_sub(width),
-            Alignment::BottomLeft | Alignment::Bottom => 0,
-            Alignment::BottomRight => parent.width.saturating_sub(width),
-            Alignment::Custom(x, _) => x,
-            Alignment::Percent(px, _) => ((parent.width as f32 - width as f32) * px) as u16,
-        };
-
-        let y = match self.alignment {
-            Alignment::Top | Alignment::TopLeft | Alignment::TopRight => 0,
-            Alignment::Left | Alignment::Right | Alignment::Center => (parent.height.saturating_sub(height)) / 2,
-            Alignment::Bottom | Alignment::BottomLeft | Alignment::BottomRight => parent.height.saturating_sub(height),
-            Alignment::Custom(_, y) => y,
-            Alignment::Percent(_, py) => ((parent.height as f32 - height as f32) * py) as u16,
-        };
-
-        Rect::new(parent.x + x, parent.y + y, width, height)
-    }
-}
-
-pub enum Alignment {
-    Center,
-    Top,
-    Bottom,
-    Left,
-    Right,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-    Custom(u16, u16),
-    Percent(f32, f32),
-}
-
-pub trait Show {
-    fn render(&self, frame: &mut Frame, formation: Formation);
-}
-
-impl Show for Deck {
-    fn render(&self, frame: &mut Frame, formation: Formation) {
-        for (index, card) in self.cards.iter().enumerate() {
-            let alignment = Alignment::Percent((index + 1) as f32 * 0.075, 0.25);
-            let formation = Formation::new((15, 9), alignment);
-            card.render(frame, formation);
+    for row in 0..height {
+        if row == 0 {
+            lines.push(Line::from(Span::styled(
+                format!(" {}", card.value),
+                style,
+            )));
+        } else if row == height - 3 {
+            lines.push(Line::from(Span::styled(
+                format!("{}{}", " ".repeat(width - 4), card.value),
+                style,
+            )));
+        } else if row == height / 2 - 1 {
+            lines.push(Line::from(Span::styled(
+                format!("{}{}", " ".repeat(width / 2 - 1), card.suit),
+                style,
+            )));
+        } else {
+            lines.push(Line::from(Span::raw("")));
         }
     }
+
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Color::White)),
+        )
+        .style(Style::default().fg(Color::White));
+
+    frame.render_widget(paragraph, area);
 }
 
-impl Show for Card {
-    fn render(&self, frame: &mut Frame, formation: Formation) {
-        let rect = formation.rect(frame.area());
-        
-        let width = rect.width as usize;
-        let height = rect.height as usize;
-        let style = Style::default().fg(suit_color(self.suit));
-        let mut lines = Vec::new();
+pub fn render_hidden_card(frame: &mut Frame, area: Rect) {
+    let width = area.width as usize;
+    let height = area.height as usize;
+    let mut lines = Vec::new();
 
-        for index in 0..height {
-            if index == 0 {
-                lines.push(
-                    Line::from(
-                        Span::styled(
-                            format!(" {}", self.value),
-                            style,
-                        )
-                    )
-                );
-            } else if index == height - 3 {
-                lines.push(
-                    Line::from(
-                        Span::styled(
-                            format!("{}{}", " ".repeat(width - 4), self.value),
-                            style,
-                        )
-                    )
-                );
-            } else if index == height / 2 - 1{
-                lines.push(
-                    Line::from(
-                        Span::styled(
-                            format!("{}{}", " ".repeat(width / 2 - 1), self.suit),
-                            style,
-                        )
-                    )
-                );
-            } else {
-                lines.push(
-                    Line::from(Span::raw(""))
-                );
-            }
+    for row in 0..height {
+        if row == 0 || row == height - 1 || row == height / 2 {
+            lines.push(Line::from(Span::styled(
+                "?".repeat(width.saturating_sub(2)),
+                Style::default().fg(Color::DarkGray),
+            )));
+        } else {
+            lines.push(Line::from(Span::raw("")));
         }
+    }
 
-        let paragraph = Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
-                    .style(Style::default().fg(Color::White)),
-            )
-            .style(Style::default().fg(Color::White));
+    let paragraph = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Color::DarkGray)),
+        )
+        .style(Style::default().fg(Color::DarkGray));
 
-        frame.render_widget(paragraph, rect);
+    frame.render_widget(paragraph, area);
+}
+
+pub fn render_hand(frame: &mut Frame, hand: &Hand, area: Rect, hide_second: bool) {
+    let count = hand.cards.len();
+    if count == 0 {
+        return;
+    }
+
+    let total_card_width = count as u16 * CARD_WIDTH + (count as u16 - 1) * CARD_GAP;
+    let start_x = if total_card_width < area.width {
+        area.x + (area.width - total_card_width) / 2
+    } else {
+        area.x
+    };
+
+    let y = area.y + (area.height.saturating_sub(CARD_HEIGHT)) / 2;
+
+    for (i, card) in hand.cards.iter().enumerate() {
+        let x = start_x + i as u16 * (CARD_WIDTH + CARD_GAP);
+        let card_rect = Rect::new(x, y, CARD_WIDTH, CARD_HEIGHT);
+
+        if hide_second && i == 1 {
+            render_hidden_card(frame, card_rect);
+        } else {
+            render_card_at(frame, card, card_rect);
+        }
+    }
+}
+
+pub fn render_sum(frame: &mut Frame, sum: usize, area: Rect) {
+    let text = Line::raw(format!("Sum: {}", sum))
+        .style(Style::default().fg(Color::White));
+    frame.render_widget(text, area);
+}
+
+pub fn suit_color(suit: Suit) -> Color {
+    match suit {
+        Suit::Spades | Suit::Clubs => Color::White,
+        Suit::Hearts | Suit::Diamonds => Color::Red,
     }
 }
