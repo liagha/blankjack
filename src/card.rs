@@ -1,21 +1,19 @@
-use std::collections::HashSet;
-use core::fmt::Display;
-use core::fmt::Formatter;
-use rand::{Rng, distr::StandardUniform, prelude::Distribution, seq::SliceRandom, RngExt};
+use core::fmt::{Display, Formatter, Result};
+use rand::{distr::StandardUniform, prelude::Distribution, seq::SliceRandom, Rng, RngExt};
 
 pub trait Worth {
     fn worth(&self) -> usize;
 }
 
 pub struct Shoe {
-    cards: Vec<Card>,
+    pub cards: Vec<Card>,
 }
 
 impl Shoe {
-    pub fn new(decks: u8) -> Self {
-        let mut cards = Vec::with_capacity(52 * decks as usize);
-        for _ in 0..decks {
-            cards.extend(STANDARD_DECK.iter().copied());
+    pub fn new(count: u8) -> Self {
+        let mut cards = Vec::with_capacity(52 * count as usize);
+        for _ in 0..count {
+            cards.extend(DECK.iter().copied());
         }
         Shoe { cards }
     }
@@ -72,21 +70,20 @@ impl Worth for Hand {
     }
 }
 
-const STANDARD_DECK: [Card; 52] = [
-    Card { suit: Suit::Clubs,    value: Value::Ace },
-    Card { suit: Suit::Clubs,    value: Value::Two },
-    Card { suit: Suit::Clubs,    value: Value::Three },
-    Card { suit: Suit::Clubs,    value: Value::Four },
-    Card { suit: Suit::Clubs,    value: Value::Five },
-    Card { suit: Suit::Clubs,    value: Value::Six },
-    Card { suit: Suit::Clubs,    value: Value::Seven },
-    Card { suit: Suit::Clubs,    value: Value::Eight },
-    Card { suit: Suit::Clubs,    value: Value::Nine },
-    Card { suit: Suit::Clubs,    value: Value::Ten },
-    Card { suit: Suit::Clubs,    value: Value::Jack },
-    Card { suit: Suit::Clubs,    value: Value::Queen },
-    Card { suit: Suit::Clubs,    value: Value::King },
-    Card { suit: Suit::Diamonds, value: Value::Ace },
+const DECK: [Card; 52] = [
+    Card { suit: Suit::Clubs, value: Value::Two },
+    Card { suit: Suit::Clubs, value: Value::Three },
+    Card { suit: Suit::Clubs, value: Value::Four },
+    Card { suit: Suit::Clubs, value: Value::Five },
+    Card { suit: Suit::Clubs, value: Value::Six },
+    Card { suit: Suit::Clubs, value: Value::Seven },
+    Card { suit: Suit::Clubs, value: Value::Eight },
+    Card { suit: Suit::Clubs, value: Value::Nine },
+    Card { suit: Suit::Clubs, value: Value::Ten },
+    Card { suit: Suit::Clubs, value: Value::Jack },
+    Card { suit: Suit::Clubs, value: Value::Queen },
+    Card { suit: Suit::Clubs, value: Value::King },
+    Card { suit: Suit::Clubs, value: Value::Ace },
     Card { suit: Suit::Diamonds, value: Value::Two },
     Card { suit: Suit::Diamonds, value: Value::Three },
     Card { suit: Suit::Diamonds, value: Value::Four },
@@ -99,32 +96,33 @@ const STANDARD_DECK: [Card; 52] = [
     Card { suit: Suit::Diamonds, value: Value::Jack },
     Card { suit: Suit::Diamonds, value: Value::Queen },
     Card { suit: Suit::Diamonds, value: Value::King },
-    Card { suit: Suit::Hearts,   value: Value::Ace },
-    Card { suit: Suit::Hearts,   value: Value::Two },
-    Card { suit: Suit::Hearts,   value: Value::Three },
-    Card { suit: Suit::Hearts,   value: Value::Four },
-    Card { suit: Suit::Hearts,   value: Value::Five },
-    Card { suit: Suit::Hearts,   value: Value::Six },
-    Card { suit: Suit::Hearts,   value: Value::Seven },
-    Card { suit: Suit::Hearts,   value: Value::Eight },
-    Card { suit: Suit::Hearts,   value: Value::Nine },
-    Card { suit: Suit::Hearts,   value: Value::Ten },
-    Card { suit: Suit::Hearts,   value: Value::Jack },
-    Card { suit: Suit::Hearts,   value: Value::Queen },
-    Card { suit: Suit::Hearts,   value: Value::King },
-    Card { suit: Suit::Spades,   value: Value::Ace },
-    Card { suit: Suit::Spades,   value: Value::Two },
-    Card { suit: Suit::Spades,   value: Value::Three },
-    Card { suit: Suit::Spades,   value: Value::Four },
-    Card { suit: Suit::Spades,   value: Value::Five },
-    Card { suit: Suit::Spades,   value: Value::Six },
-    Card { suit: Suit::Spades,   value: Value::Seven },
-    Card { suit: Suit::Spades,   value: Value::Eight },
-    Card { suit: Suit::Spades,   value: Value::Nine },
-    Card { suit: Suit::Spades,   value: Value::Ten },
-    Card { suit: Suit::Spades,   value: Value::Jack },
-    Card { suit: Suit::Spades,   value: Value::Queen },
-    Card { suit: Suit::Spades,   value: Value::King },
+    Card { suit: Suit::Diamonds, value: Value::Ace },
+    Card { suit: Suit::Hearts, value: Value::Two },
+    Card { suit: Suit::Hearts, value: Value::Three },
+    Card { suit: Suit::Hearts, value: Value::Four },
+    Card { suit: Suit::Hearts, value: Value::Five },
+    Card { suit: Suit::Hearts, value: Value::Six },
+    Card { suit: Suit::Hearts, value: Value::Seven },
+    Card { suit: Suit::Hearts, value: Value::Eight },
+    Card { suit: Suit::Hearts, value: Value::Nine },
+    Card { suit: Suit::Hearts, value: Value::Ten },
+    Card { suit: Suit::Hearts, value: Value::Jack },
+    Card { suit: Suit::Hearts, value: Value::Queen },
+    Card { suit: Suit::Hearts, value: Value::King },
+    Card { suit: Suit::Hearts, value: Value::Ace },
+    Card { suit: Suit::Spades, value: Value::Two },
+    Card { suit: Suit::Spades, value: Value::Three },
+    Card { suit: Suit::Spades, value: Value::Four },
+    Card { suit: Suit::Spades, value: Value::Five },
+    Card { suit: Suit::Spades, value: Value::Six },
+    Card { suit: Suit::Spades, value: Value::Seven },
+    Card { suit: Suit::Spades, value: Value::Eight },
+    Card { suit: Suit::Spades, value: Value::Nine },
+    Card { suit: Suit::Spades, value: Value::Ten },
+    Card { suit: Suit::Spades, value: Value::Jack },
+    Card { suit: Suit::Spades, value: Value::Queen },
+    Card { suit: Suit::Spades, value: Value::King },
+    Card { suit: Suit::Spades, value: Value::Ace },
 ];
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
@@ -135,7 +133,6 @@ pub struct Card {
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum Value {
-    Ace,
     Two,
     Three,
     Four,
@@ -148,6 +145,7 @@ pub enum Value {
     Jack,
     Queen,
     King,
+    Ace,
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
@@ -158,8 +156,28 @@ pub enum Suit {
     Spades,
 }
 
+impl Value {
+    pub fn score(&self) -> u8 {
+        match self {
+            Value::Two => 2,
+            Value::Three => 3,
+            Value::Four => 4,
+            Value::Five => 5,
+            Value::Six => 6,
+            Value::Seven => 7,
+            Value::Eight => 8,
+            Value::Nine => 9,
+            Value::Ten => 10,
+            Value::Jack => 11,
+            Value::Queen => 12,
+            Value::King => 13,
+            Value::Ace => 14,
+        }
+    }
+}
+
 impl Display for Value {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Value::Ace => write!(f, "A"),
             Value::Two => write!(f, "2"),
@@ -179,7 +197,7 @@ impl Display for Value {
 }
 
 impl Display for Suit {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Suit::Clubs => write!(f, "♣"),
             Suit::Diamonds => write!(f, "♦"),
@@ -218,19 +236,19 @@ impl Distribution<Card> for StandardUniform {
 impl Distribution<Value> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Value {
         match rng.random_range(0..13) {
-            0 => Value::Ace,
-            1 => Value::Two,
-            2 => Value::Three,
-            3 => Value::Four,
-            4 => Value::Five,
-            5 => Value::Six,
-            6 => Value::Seven,
-            7 => Value::Eight,
-            8 => Value::Nine,
-            9 => Value::Ten,
-            10 => Value::Jack,
-            11 => Value::Queen,
-            12 => Value::King,
+            0 => Value::Two,
+            1 => Value::Three,
+            2 => Value::Four,
+            3 => Value::Five,
+            4 => Value::Six,
+            5 => Value::Seven,
+            6 => Value::Eight,
+            7 => Value::Nine,
+            8 => Value::Ten,
+            9 => Value::Jack,
+            10 => Value::Queen,
+            11 => Value::King,
+            12 => Value::Ace,
             _ => unreachable!(),
         }
     }
